@@ -1,5 +1,4 @@
-from fastapi import FastAPI, Security, HTTPException, File, UploadFile, Depends
-from fastapi.security.api_key import APIKeyHeader
+from fastapi import FastAPI, HTTPException, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 import tensorflow as tf
 import numpy as np
@@ -9,23 +8,17 @@ import json
 
 app = FastAPI()
 
-# 1. Enable CORS (Allows your web UI to talk to this API)
+# 1. The Security Shield (CORS Restriction)
+# IMPORTANT: Replace with your actual GitHub Pages URL!
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], 
+    allow_origins=["https://piyumalsr.github.io/IMG-Classifier/"], 
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["POST", "OPTIONS"],
     allow_headers=["*"],
 )
 
-# 2. API Key Security
-API_KEY_NAME = "X-API-Key"
-api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=True)
-
-async def get_api_key(api_key_header: str = Security(api_key_header)):
-    return api_key_header 
-
-# 3. Load the Model (Architecture + Weights)
+# 2. Load the Model 
 try:
     with open('config.json', 'r') as json_file:
         model_json = json_file.read()
@@ -35,18 +28,15 @@ try:
 except Exception as e:
     print(f"Error loading model: {e}")
 
-# 4. The Image Prediction Endpoint
+# 3. The Public Prediction Endpoint (No API Key Required!)
 @app.post("/predict")
-async def predict(file: UploadFile = File(...), api_key: str = Depends(get_api_key)):
+async def predict(file: UploadFile = File(...)):
     try:
-        # Read the uploaded image
+        # Read and format the image
         contents = await file.read()
         image = Image.open(io.BytesIO(contents)).convert("RGB")
-        
-        # Resize to 32x32 based on your config.json!
         image = image.resize((32, 32)) 
         
-        # Convert image to numpy array and normalize (0 to 1)
         img_array = np.array(image) / 255.0
         img_array = np.expand_dims(img_array, axis=0) 
         
