@@ -24,7 +24,9 @@ try:
     model.load_weights("model.weights.h5")
     print("Model loaded successfully!")
 except Exception as e:
-    print(f"Error loading model: {e}")
+    print(f"CRITICAL ERROR: Failed to load model: {e}")
+    # Force the app to crash so Render shows you the true error immediately
+    raise e 
 
 @app.post("/predict")
 async def predict(file: UploadFile = File(...)):
