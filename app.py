@@ -4,21 +4,19 @@ import tensorflow as tf
 import numpy as np
 from PIL import Image
 import io
-import json
 
 app = FastAPI()
 
-# 1. The Security Shield (CORS Restriction)
-# IMPORTANT: Replace with your actual GitHub Pages URL!
+# Allow your local HTML file and GitHub Pages to talk to the API
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://piyumalsr.github.io/IMG-Classifier/"], 
+    allow_origins=["*"], 
     allow_credentials=True,
-    allow_methods=["POST", "OPTIONS"],
+    allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# 2. Load the Model 
+# Load the Model properly 
 try:
     with open('config.json', 'r') as json_file:
         model_json = json_file.read()
@@ -28,19 +26,17 @@ try:
 except Exception as e:
     print(f"Error loading model: {e}")
 
-# 3. The Public Prediction Endpoint (No API Key Required!)
 @app.post("/predict")
 async def predict(file: UploadFile = File(...)):
     try:
-        # Read and format the image
         contents = await file.read()
         image = Image.open(io.BytesIO(contents)).convert("RGB")
         image = image.resize((32, 32)) 
         
+        # Enforce float32 to keep Keras 3 happy
         img_array = np.array(image, dtype=np.float32) / 255.0
         img_array = np.expand_dims(img_array, axis=0) 
         
-        # Make prediction
         prediction = model.predict(img_array)
         
         return {"prediction": prediction.tolist()}
