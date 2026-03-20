@@ -8,13 +8,12 @@
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; color: #333; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
         .container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; }
         h2 { margin-top: 0; color: #2c3e50; }
-        input[type="text"], input[type="password"] { width: 90%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 6px; }
         .file-upload { margin: 20px 0; padding: 20px; border: 2px dashed #3498db; border-radius: 8px; cursor: pointer; background: #f9fbfc; transition: 0.3s; }
         .file-upload:hover { background: #eef5fa; }
-        img#preview { max-width: 100%; max-height: 250px; margin-top: 15px; border-radius: 8px; display: none; }
+        img#preview { max-width: 100%; max-height: 250px; margin-top: 15px; border-radius: 8px; display: none; margin-left: auto; margin-right: auto;}
         button { background: #3498db; color: white; border: none; padding: 12px 20px; width: 100%; border-radius: 6px; font-size: 16px; cursor: pointer; transition: 0.3s; font-weight: bold;}
         button:hover { background: #2980b9; }
-        #result-box { margin-top: 20px; padding: 15px; border-radius: 6px; background: #e8f8f5; color: #117a65; font-weight: bold; display: none; word-wrap: break-word; }
+        #result-box { margin-top: 20px; padding: 15px; border-radius: 6px; background: #e8f8f5; color: #117a65; font-weight: bold; display: none; word-wrap: break-word; text-align: left;}
         .loader { display: none; border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 15px auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
@@ -24,9 +23,6 @@
 <div class="container">
     <h2>AI Image Predictor</h2>
     
-    <input type="text" id="apiUrl" placeholder="Your Render URL (e.g., https://api.onrender.com/predict)" required>
-    <input type="password" id="apiKey" placeholder="Enter API Key" required>
-
     <div class="file-upload" onclick="document.getElementById('imageInput').click()">
         <p>📁 Click to Upload Image</p>
         <input type="file" id="imageInput" accept="image/*" style="display: none;" onchange="previewImage(event)">
@@ -41,6 +37,13 @@
 </div>
 
 <script>
+    // ==========================================
+    // ⚠️ HARDCODE YOUR RENDER URL HERE ⚠️
+    // ==========================================
+    const MY_RENDER_URL = "https://generate-mask-ixuo.onrender.com"; 
+    // Example: "https://dinushka-ml-api.onrender.com/predict"
+    // ==========================================
+
     // Show image preview when user selects a file
     function previewImage(event) {
         const reader = new FileReader();
@@ -52,48 +55,48 @@
         reader.readAsDataURL(event.target.files[0]);
     }
 
-    // Send image to API
+    // Send image to your Render API
     async function makePrediction() {
-        const apiUrl = document.getElementById('apiUrl').value;
-        const apiKey = document.getElementById('apiKey').value;
         const imageFile = document.getElementById('imageInput').files[0];
-        
         const resultBox = document.getElementById('result-box');
         const loader = document.getElementById('loader');
 
-        if (!apiUrl || !apiKey || !imageFile) {
-            alert("Please provide the API URL, API Key, and an image!");
+        if (!imageFile) {
+            alert("Please select an image first!");
             return;
         }
 
-        // Prepare the request
+        if (MY_RENDER_URL === "PASTE_YOUR_RENDER_URL_HERE") {
+            alert("Developer Error: You forgot to paste your Render URL into the code!");
+            return;
+        }
+
+        // Prepare the image to be sent
         const formData = new FormData();
         formData.append("file", imageFile);
 
-        // Show loading animation
+        // Show loading animation, hide previous results
         loader.style.display = "block";
         resultBox.style.display = "none";
 
         try {
-            const response = await fetch(apiUrl, {
+            // Send the request! Notice there is no API Key header anymore.
+            const response = await fetch(MY_RENDER_URL, {
                 method: 'POST',
-                headers: {
-                    'X-API-Key': apiKey // Send the secret key
-                },
                 body: formData
             });
 
             const data = await response.json();
             
-            // Hide loading animation and show results
+            // Hide loading animation
             loader.style.display = "none";
             resultBox.style.display = "block";
 
+            // Display the results
             if (response.ok) {
-                // Formatting the raw array output to look nice
                 resultBox.style.background = "#e8f8f5";
                 resultBox.style.color = "#117a65";
-                resultBox.innerText = "Prediction: \n" + JSON.stringify(data.prediction[0], null, 2);
+                resultBox.innerText = "Prediction Raw Data: \n\n" + JSON.stringify(data.prediction[0], null, 2);
             } else {
                 resultBox.style.background = "#fadbd8";
                 resultBox.style.color = "#943126";
@@ -109,69 +112,5 @@
     }
 </script>
 
-<script>
-    // ==========================================
-    // PASTE YOUR RENDER URL HERE
-    // ==========================================
-    const MY_RENDER_URL = "https://generate-mask-ixuo.onrender.com"; 
-    // ==========================================
-
-    function previewImage(event) {
-        const reader = new FileReader();
-        reader.onload = function() {
-            const preview = document.getElementById('preview');
-            preview.src = reader.result;
-            preview.style.display = 'block';
-        }
-        reader.readAsDataURL(event.target.files[0]);
-    }
-
-    async function makePrediction() {
-        const imageFile = document.getElementById('imageInput').files[0];
-        const resultBox = document.getElementById('result-box');
-        const loader = document.getElementById('loader');
-
-        if (!imageFile) {
-            alert("Please select an image first!");
-            return;
-        }
-
-        const formData = new FormData();
-        formData.append("file", imageFile);
-
-        loader.style.display = "block";
-        resultBox.style.display = "none";
-
-        try {
-            // Notice we removed the headers section where the API key used to be!
-            const response = await fetch(MY_RENDER_URL, {
-                method: 'POST',
-                body: formData
-            });
-
-            const data = await response.json();
-            
-            loader.style.display = "none";
-            resultBox.style.display = "block";
-
-            if (response.ok) {
-                resultBox.style.background = "#e8f8f5";
-                resultBox.style.color = "#117a65";
-                resultBox.innerText = "Prediction: \n" + JSON.stringify(data.prediction[0], null, 2);
-            } else {
-                resultBox.style.background = "#fadbd8";
-                resultBox.style.color = "#943126";
-                resultBox.innerText = "Error: " + data.detail;
-            }
-        } catch (error) {
-            loader.style.display = "none";
-            resultBox.style.display = "block";
-            resultBox.style.background = "#fadbd8";
-            resultBox.style.color = "#943126";
-            resultBox.innerText = "Connection failed. Make sure your Render API is Live.";
-        }
-    }
-</script>
-    
 </body>
 </html>
